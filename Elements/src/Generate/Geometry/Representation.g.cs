@@ -20,16 +20,18 @@ namespace Elements.Geometry
     #pragma warning disable // Disable all warnings
 
     /// <summary>The representation of an element.</summary>
+    [Newtonsoft.Json.JsonConverter(typeof(Elements.Serialization.JSON.JsonInheritanceConverter), "discriminator")]
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.1.21.0 (Newtonsoft.Json v11.0.0.0)")]
-    public partial class Representation 
+    public partial class Representation : Element
     {
         [Newtonsoft.Json.JsonConstructor]
-        public Representation(IList<SolidOperation> @solidOperations)
+        public Representation(IList<SolidOperation> @solidOperations, System.Guid @id, string @name)
+            : base(id, name)
         {
             var validator = Validator.Instance.GetFirstValidatorForType<Representation>();
             if(validator != null)
             {
-                validator.PreConstruct(new object[]{ @solidOperations});
+                validator.PreConstruct(new object[]{ @solidOperations, @id, @name});
             }
         
             this.SolidOperations = @solidOperations;

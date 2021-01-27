@@ -79,7 +79,7 @@ namespace Elements.Tests
 
             // We expect three geometric elements,
             // but the baz will not deserialize.
-            Assert.Equal(3, model.Elements.Count);
+            Assert.Equal(4, model.Elements.Count);
             Assert.Equal(2, errors.Count);
         }
 
@@ -192,7 +192,7 @@ namespace Elements.Tests
             // https://www.newtonsoft.com/json/help/html/ModifyJson.htm
             var obj = JObject.Parse(json);
             var elements = obj["Elements"];
-            var c = (JObject)elements.Values().ElementAt(2);
+            var c = (JObject)elements.Values().ElementAt(3);
 
             // Inject an unknown property.
             c.Property("Curve").AddAfterSelf(new JProperty("Foo", "Bar"));
@@ -213,7 +213,7 @@ namespace Elements.Tests
             // https://www.newtonsoft.com/json/help/html/ModifyJson.htm
             var obj = JObject.Parse(json);
             var elements = obj["Elements"];
-            var c = (JObject)elements.Values().ElementAt(2); // the column
+            var c = (JObject)elements.Values().ElementAt(3); // the column
 
             // Remove the Location property
             c.Property("Location").Remove();
@@ -232,7 +232,7 @@ namespace Elements.Tests
             // https://www.newtonsoft.com/json/help/html/ModifyJson.htm
             var obj = JObject.Parse(json);
             var elements = obj["Elements"];
-            var c = (JObject)elements.Values().ElementAt(2); // the column
+            var c = (JObject)elements.Values().ElementAt(3); // the column
 
             // Nullify a property.
             c.Property("Location").Value = null;

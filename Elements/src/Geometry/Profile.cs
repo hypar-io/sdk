@@ -10,6 +10,8 @@ namespace Elements.Geometry
     /// </summary>
     public partial class Profile : Element, IEquatable<Profile>
     {
+        internal override int SortPriority => 3;
+
         /// <summary>
         /// Construct a profile.
         /// </summary>

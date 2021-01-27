@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.3
+### Added
+- `Model.ElementsVersion`
+- `Element.UpdateChildren()`
+- `Element.AllChildren()`
+
+### Changed
+- `Representation` now inherits from `Element`.
+
 ## 0.8.2
 
 ### Changed

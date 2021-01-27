@@ -195,6 +195,10 @@ namespace Elements.Serialization.JSON
             if (typeof(Element).IsAssignableFrom(objectType) && reader.Path.Split('.').Length == 1 && reader.Value != null)
             {
                 var id = Guid.Parse(reader.Value.ToString());
+                if (!Elements.ContainsKey(id))
+                {
+                    throw new Exception($"An Element of type {objectType.Name} cannot be found with the key {id}.");
+                }
                 return Elements[id];
             }
 

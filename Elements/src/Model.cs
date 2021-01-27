@@ -3,12 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Collections;
 using Newtonsoft.Json;
 using Elements.Serialization.JSON;
 using Elements.Geometry;
 using Elements.Validators;
+using Newtonsoft.Json.Linq;
 
 namespace Elements
 {
@@ -17,6 +16,11 @@ namespace Elements
     /// </summary>
     public partial class Model
     {
+        /// <summary>
+        /// The version of the Elements library used to create this model.
+        /// </summary>
+        public string ElementsVersion => this.GetType().Assembly.GetName().Version.ToString();
+
         /// <summary>
         /// Construct an empty model.
         /// </summary>
@@ -48,38 +52,29 @@ namespace Elements
         /// for element sub-properties and adds those elements to the elements
         /// dictionary before adding the element itself.
         /// </summary>
-        /// <param name="element">The element to add to the model.</param>
-        /// <param name="gatherSubElements">Should sub-elements in properties be
+        /// <param name="element">The element to add to the model.
         /// added to the model's elements collection?</param>
-        public void AddElement(Element element, bool gatherSubElements = true)
+        /// <param name="updateElementChildren">A flag indicating whether the element's children should be parsed during addition.</param>
+        public void AddElement(Element element, bool updateElementChildren = true)
         {
-            if (element == null || this.Elements.ContainsKey(element.Id))
+            if (element == null)
             {
                 return;
             }
 
-            if (gatherSubElements)
+            element.UpdateChildren();
+            var subElements = element.AllChildren();
+            foreach (var subElement in subElements)
             {
-                // Look at all public properties of the element.
-                // For all properties which inherit from element, add those
-                // to the elements dictionary first. This will ensure that
-                // those elements will be read out and be available before
-                // an attempt is made to deserialize the element itself.
-                var subElements = RecursiveGatherSubElements(element);
-                foreach (var e in subElements)
+                if (!this.Elements.ContainsKey(subElement.Key))
                 {
-                    if (!this.Elements.ContainsKey(e.Id))
-                    {
-                        this.Elements.Add(e.Id, e);
-                    }
+                    this.Elements.Add(subElement.Key, subElement.Value);
                 }
             }
-            else
+
+            if (!this.Elements.ContainsKey(element.Id))
             {
-                if (!this.Elements.ContainsKey(element.Id))
-                {
-                    this.Elements.Add(element.Id, element);
-                }
+                this.Elements.Add(element.Id, element);
             }
         }
 
@@ -87,13 +82,11 @@ namespace Elements
         /// Add a collection of elements to the model.
         /// </summary>
         /// <param name="elements">The elements to add to the model.</param>
-        /// <param name="gatherSubElements">Should sub-elements in properties be
-        /// added to the model's elements collection?</param>
-        public void AddElements(IEnumerable<Element> elements, bool gatherSubElements = true)
+        public void AddElements(IEnumerable<Element> elements)
         {
             foreach (var e in elements)
             {
-                AddElement(e, gatherSubElements);
+                AddElement(e);
             }
         }
 
@@ -155,13 +148,12 @@ namespace Elements
         /// </summary>
         public string ToJson(bool indent = false)
         {
-            // Recursively add elements and sub elements in the correct
-            // order for serialization. We do this here because element properties
-            // may have been null when originally added, and we need to ensure
-            // that they have a value if they've been set since.
             var exportModel = new Model();
             foreach (var kvp in this.Elements)
             {
+                // TODO: Remove this when classes are updated to use
+                // INotifyPropertyChanged
+
                 // Some elements compute profiles and transforms
                 // during UpdateRepresentation. Call UpdateRepresentation
                 // here to ensure these values are correct in the JSON.
@@ -169,10 +161,24 @@ namespace Elements
                 {
                     ((GeometricElement)kvp.Value).UpdateRepresentations();
                 }
-                exportModel.AddElement(kvp.Value);
+                // Don't parse the children during this addition because
+                // the previous call to UpdateRepresentation will already
+                // have forced this.
+                exportModel.AddElement(kvp.Value, false);
             }
-            exportModel.Transform = this.Transform;
 
+            // Sort the elements in priority order.
+            // So that they are deserialized with dependent
+            // elements first.
+            var elements = exportModel.Elements.Values.ToList();
+            elements.Sort((a, b) =>
+            {
+                if (a.SortPriority < b.SortPriority) return 1;
+                if (a.SortPriority > b.SortPriority) return -1;
+                return 0;
+            });
+            exportModel.Transform = this.Transform;
+            exportModel.Elements = elements.ToDictionary(e => e.Id, e => e);
             return Newtonsoft.Json.JsonConvert.SerializeObject(exportModel,
                                                                indent ? Formatting.Indented : Formatting.None);
         }
@@ -181,107 +187,78 @@ namespace Elements
         /// Deserialize a model from JSON.
         /// </summary>
         /// <param name="json">The JSON representing the model.</param>
-        /// <param name="errors">A collection of deserialization errors.</param>
+        /// <param name="serializationErrors">A collection of deserialization errors.</param>
         /// <param name="forceTypeReload">Option to force reloading the inernal type cache. Use if you add types dynamically in your code.</param>
-        public static Model FromJson(string json, out List<string> errors, bool forceTypeReload = false)
+        public static Model FromJson(string json,
+                                     out List<string> serializationErrors,
+                                     bool forceTypeReload = false)
         {
-            // When user elements have been loaded into the app domain, they haven't always been
-            // loaded into the InheritanceConverter's Cache.  This does have some overhead,
-            // but is useful here, at the Model level, to ensure user types are available.
-            var deserializationErrors = new List<string>();
+            serializationErrors = new List<string>();
+
+            var obj = JObject.Parse(json);
+            Migrator.Instance.Migrate(obj, out var migrationErrors);
+
+            var model = DeserializeModel(obj, out var deserializationErrors, forceTypeReload);
+
+            serializationErrors.AddRange(migrationErrors);
+            serializationErrors.AddRange(deserializationErrors);
+
+            return model;
+        }
+
+        /// <summary>
+        /// Deserialize a model from JSON using custom migrations.
+        /// </summary>
+        /// <param name="json">The JSON representing the model.</param>
+        /// <param name="migrator">A migrator instance. Use this parameter to supply a custom migrator.</param>
+        /// <param name="serializationErrors">A collection of deserialization and migration errors.</param>
+        /// <param name="forceTypeReload">Option to force reloading the inernal type cache. Use if you add types dynamically in your code.</param>
+        public static Model FromJson(string json,
+                                     Migrator migrator,
+                                     out List<string> serializationErrors,
+                                     bool forceTypeReload = false)
+        {
+            serializationErrors = new List<string>();
+
+            var obj = JObject.Parse(json);
+            migrator.Migrate(obj, out var migrationErrors);
+
+            var model = DeserializeModel(obj, out var deserialiationErrors, forceTypeReload);
+
+            serializationErrors.AddRange(migrationErrors);
+            serializationErrors.AddRange(deserialiationErrors);
+
+            return model;
+        }
+
+        private static Model DeserializeModel(JObject obj, out List<string> serializationErrors, bool forceTypeReload)
+        {
+            serializationErrors = new List<string>();
+
             if (forceTypeReload)
             {
                 JsonInheritanceConverter.RefreshAppDomainTypeCache(out var typeLoadErrors);
-                deserializationErrors.AddRange(typeLoadErrors);
+                serializationErrors.AddRange(typeLoadErrors);
             }
 
-            var model = Newtonsoft.Json.JsonConvert.DeserializeObject<Model>(json, new JsonSerializerSettings()
+            var errors = new List<string>();
+            var serializer = JsonSerializer.Create(new JsonSerializerSettings()
             {
                 Error = (sender, args) =>
                 {
-                    deserializationErrors.Add(args.ErrorContext.Error.Message);
+                    errors.Add(args.ErrorContext.Error.Message);
                     args.ErrorContext.Handled = true;
                 }
             });
-            errors = deserializationErrors;
-            JsonInheritanceConverter.Elements.Clear();
+            var model = obj.ToObject<Model>(serializer);
+            serializationErrors.AddRange(errors);
+
             return model;
         }
 
         public static Model FromJson(string json, bool forceTypeReload = false)
         {
             return FromJson(json, out _, forceTypeReload);
-        }
-
-        private List<Element> RecursiveGatherSubElements(object obj)
-        {
-            var elements = new List<Element>();
-
-            if (obj == null)
-            {
-                return elements;
-            }
-
-            var e = obj as Element;
-            if (e != null && Elements.ContainsKey(e.Id))
-            {
-                // Do nothing. The Element has already
-                // been added. This assumes that that the sub-elements
-                // have been added as well and we don't need to continue.
-                return elements;
-            }
-
-            var t = obj.GetType();
-
-            // Ignore value types and strings
-            // as they won't have properties that
-            // could be elements.
-            if (!t.IsClass || t == typeof(string))
-            {
-                return elements;
-            }
-
-            t.GetCustomAttribute(typeof(JsonIgnoreAttribute));
-            var props = t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                         .Where(p => p.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null);
-            foreach (var p in props)
-            {
-                var pValue = p.GetValue(obj, null);
-                if (pValue == null)
-                {
-                    continue;
-                }
-
-                var elems = pValue as IList;
-                if (elems != null)
-                {
-                    foreach (var item in elems)
-                    {
-                        elements.AddRange(RecursiveGatherSubElements(item));
-                    }
-                    continue;
-                }
-
-                // Get the properties dictionaries.
-                var dict = pValue as IDictionary;
-                if (dict != null)
-                {
-                    foreach (var value in dict.Values)
-                    {
-                        elements.AddRange(RecursiveGatherSubElements(value));
-                    }
-                    continue;
-                }
-
-                elements.AddRange(RecursiveGatherSubElements(pValue));
-            }
-
-            if (e != null)
-            {
-                elements.Add(e);
-            }
-
-            return elements;
         }
     }
 }

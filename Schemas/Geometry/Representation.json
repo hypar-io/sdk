@@ -9,8 +9,10 @@
         "null"
     ],
     "required": [
-        "SolidOperations"
+        "SolidOperations",
+        "discriminator"
     ],
+    "discriminator": "discriminator",
     "properties": {
         "SolidOperations": {
             "type": "array",
@@ -18,7 +20,15 @@
             "items": {
                 "$ref": "https://raw.githubusercontent.com/hypar-io/Elements/master/Schemas/Geometry/Solids/SolidOperation.json"
             }
+        },
+        "discriminator": {
+            "type": "string"
         }
     },
+    "allOf": [
+        {
+            "$ref": "https://raw.githubusercontent.com/hypar-io/Elements/master/Schemas/Element.json"
+        }
+    ],
     "additionalProperties": false
 }

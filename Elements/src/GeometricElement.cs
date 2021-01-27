@@ -5,6 +5,8 @@ namespace Elements
 {
     public partial class GeometricElement
     {
+        internal override int SortPriority => 1;
+
         /// <summary>
         /// This method provides an opportunity for geometric elements
         /// to adjust their solid operations before tesselation. As an example,
@@ -31,5 +33,6 @@ namespace Elements
 
             return new ElementInstance(this, transform, name, Guid.NewGuid());
         }
+
     }
 }

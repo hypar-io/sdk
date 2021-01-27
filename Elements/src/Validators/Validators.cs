@@ -19,6 +19,11 @@ namespace Elements.Validators
             {
                 geom.Material = BuiltInMaterials.Default;
             }
+
+            geom.PropertyChanged += (sender, args) =>
+            {
+                geom.UpdateRepresentations();
+            };
         }
 
         public void PreConstruct(object[] args)

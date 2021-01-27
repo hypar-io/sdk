@@ -9,6 +9,8 @@ namespace Elements
     /// </summary>
     public partial class Material : Element
     {
+        internal override int SortPriority => 3;
+
         /// <summary>
         /// Construct a material.
         /// </summary>
@@ -47,7 +49,8 @@ namespace Elements
                  texture,
                  doubleSided,
                  id != default(Guid) ? id : Guid.NewGuid(),
-                 name){}
+                 name)
+        { }
 
         /// <summary>
         /// Is this material equal to the provided material?

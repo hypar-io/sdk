@@ -51,6 +51,8 @@ namespace Elements.Serialization.JSON
             }
         }
 
+        private static List<string> _deserializationDiscriminatorWarnings = new List<string>();
+
         public JsonInheritanceConverter()
         {
             _discriminator = DefaultDiscriminatorName;
@@ -195,6 +197,13 @@ namespace Elements.Serialization.JSON
             return true;
         }
 
+        public static List<string> GetAndClearDeserializationWarnings()
+        {
+            var warnings = _deserializationDiscriminatorWarnings.ToList();
+            _deserializationDiscriminatorWarnings.Clear();
+            return warnings;
+        }
+
         public override object ReadJson(Newtonsoft.Json.JsonReader reader, System.Type objectType, object existingValue, Newtonsoft.Json.JsonSerializer serializer)
         {
             // The serialized value is an identifier, so the expectation is
@@ -259,7 +268,8 @@ namespace Elements.Serialization.JSON
 
                 if (discriminator != null)
                 {
-                    throw new Exception($"An object with the discriminator, {discriminator}, could not be deserialized. {baseMessage} {moreInfoMessage}", ex);
+                    _deserializationDiscriminatorWarnings.Add($"An object with the discriminator, {discriminator}, could not be deserialized. {baseMessage}");
+                    return null;
                 }
                 else
                 {

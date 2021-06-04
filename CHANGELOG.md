@@ -25,6 +25,7 @@
 - Leave the discriminator property during deserialization. It will go to AdditionalProperties.
 - `Grid1d.ClosestPosition` now does a better job finding points on polyline axes.
 - Code-generated constructors now get default arguments for inherited properties.
+- Deserialization no longer uses throw to catch all missing type exceptions.
 
 ### Fixed
 

@@ -989,20 +989,16 @@ namespace Elements.Serialization.glTF
                     // if we have a stored node for this object, we use that when adding it to the gltf.
                     if (nodeElementMap.TryGetValue(i.BaseDefinition.Id, out var nodeToCopy))
                     {
-                        transform.Concatenate(i.Transform);
-                        NodeUtilities.AddInstanceAsCopyOfNode(nodes, nodeElementMap[i.BaseDefinition.Id], transform);
-                    }
-                    else
-                    {
-                        // If there is a transform stored for the content base definition we
-                        // should apply it when creating instances.
-                        // TODO check if this meshTransformMap ever does anything.
                         if (meshTransformMap.TryGetValue(i.BaseDefinition.Id, out var baseTransform))
                         {
                             transform.Concatenate(baseTransform);
                         }
                         transform.Concatenate(i.Transform);
-                        NodeUtilities.AddInstanceNode(nodes, meshElementMap[i.BaseDefinition.Id], transform);
+                        NodeUtilities.AddInstanceAsCopyOfNode(nodes, nodeElementMap[i.BaseDefinition.Id], transform);
+                    }
+                    else
+                    {
+                        throw new Exception("Missing node element map for ContentElement base Definition.  This can happen if the ContentElement was not loaded before this instance is being placed.  Please check for deserialization errors and ");
                     }
                 }
                 else

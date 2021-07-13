@@ -72,8 +72,8 @@ namespace Elements.Tests
             // A floor with two holes punched in it.
             var p1 = Polygon.Rectangle(1, 1);
             var p2 = Polygon.Rectangle(1, 1);
-            var o1 = new Opening(p1, 1, 1);
-            var o2 = new Opening(p2, 3, 3);
+            var o1 = new Opening(p1, Vector3.ZAxis, 1, 1);
+            var o2 = new Opening(p2, Vector3.ZAxis, 3, 3);
             var floor = new Floor(Polygon.Rectangle(10, 10), 0.2);
             Assert.Equal(100.0, floor.Area());
         }

@@ -1,5 +1,4 @@
 using Elements.Geometry;
-using Elements.Interfaces;
 using System;
 using Elements.Geometry.Solids;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ namespace Elements
     /// <example>
     /// [!code-csharp[Main](../../Elements/test/FloorTests.cs?name=example)]
     /// </example>
-    public class Floor : GeometricElement, IHasOpenings
+    public class Floor : GeometricElement
     {
         /// <summary>
         /// The elevation from which the floor is extruded.
@@ -30,11 +29,6 @@ namespace Elements
         /// The untransformed profile of the floor.
         /// </summary>
         public Profile Profile { get; set; }
-
-        /// <summary>
-        /// A collection of openings in the floor.
-        /// </summary>
-        public List<Opening> Openings { get; } = new List<Opening>();
 
         /// <summary>
         /// Create a floor.
@@ -121,7 +115,7 @@ namespace Elements
         /// <param name="depthBack">The depth of the opening along the opening's -Z axis.</param>
         public Opening AddOpening(double width, double height, double x, double y, double depthFront = 1, double depthBack = 1)
         {
-            var o = new Opening(Polygon.Rectangle(width, height), depthFront, depthBack, new Transform(x, y, 0));
+            var o = new Opening(Polygon.Rectangle(width, height), Vector3.ZAxis, depthFront, depthBack, new Transform(x, y, 0));
             this.Openings.Add(o);
             return o;
         }
@@ -136,7 +130,7 @@ namespace Elements
         /// <param name="depthBack">The depth of the opening along the opening's -Z axis.</param>
         public Opening AddOpening(Polygon perimeter, double x, double y, double depthFront = 1, double depthBack = 1)
         {
-            var o = new Opening(perimeter, depthFront, depthBack, new Transform(x, y, 0));
+            var o = new Opening(perimeter, Vector3.ZAxis, depthFront, depthBack, new Transform(x, y, 0));
             this.Openings.Add(o);
             return o;
         }

@@ -35,10 +35,16 @@ namespace Elements
         public double DepthBack { get; set; }
 
         /// <summary>
+        /// The direction of the opening's extrusion.
+        /// </summary>
+        public Vector3 Direction { get; set; }
+
+        /// <summary>
         /// Create an opening.
         /// </summary>
         [JsonConstructor]
         public Opening(Polygon perimeter,
+                       Vector3 direction,
                        double depthFront = 1.0,
                        double depthBack = 1.0,
                        Transform transform = null,
@@ -55,6 +61,7 @@ namespace Elements
             this.Perimeter = perimeter;
             this.DepthBack = depthBack;
             this.DepthFront = depthFront;
+            this.Direction = direction;
         }
 
         /// <summary>
@@ -65,11 +72,11 @@ namespace Elements
             this.Representation.SolidOperations.Clear();
             if (this.DepthFront > 0)
             {
-                this.Representation.SolidOperations.Add(new Extrude(this.Perimeter, this.DepthFront, Vector3.ZAxis, true));
+                this.Representation.SolidOperations.Add(new Extrude(this.Perimeter, this.DepthFront, this.Direction, true));
             }
             if (this.DepthBack > 0)
             {
-                this.Representation.SolidOperations.Add(new Extrude(this.Perimeter, this.DepthBack, Vector3.ZAxis.Negate(), true));
+                this.Representation.SolidOperations.Add(new Extrude(this.Perimeter, this.DepthBack, this.Direction.Negate(), true));
             }
         }
     }

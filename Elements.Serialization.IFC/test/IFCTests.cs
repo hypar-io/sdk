@@ -41,6 +41,26 @@ namespace Elements.IFC.Tests
             model.ToGlTF(ConstructGlbPath(name));
         }
 
+        [Theory]
+        [InlineData("AC-20-Smiley-West-10-Bldg", "../../../models/IFC4/AC-20-Smiley-West-10-Bldg.ifc")]
+        [InlineData("AC20-Institute-Var-2", "../../../models/IFC4/AC20-Institute-Var-2.ifc")]
+        // [InlineData("rst_sample", "../../../models/IFC4/rst_advanced_sample_project.ifc")]
+        // [InlineData("20160125WestRiverSide Hospital - IFC4-Autodesk_Hospital_Sprinkle", "../../../models/IFC4/20160125WestRiverSide Hospital - IFC4-Autodesk_Hospital_Sprinkle.ifc")]
+        public void IFC42(string name, string ifcPath)
+        {
+            var ctorErrors = new List<string>();
+            var model = IFCModelExtensions.FromIFC2(Path.Combine(Environment.CurrentDirectory, ifcPath), out ctorErrors);
+            foreach (var e in ctorErrors)
+            {
+                this.output.WriteLine(e);
+            }
+
+            // TODO: See if we can improve using this predicate here. For some
+            // reason the IFCs have a very large number of solid operations, which
+            // cause CSG unions to fail (or take an exceedingly long time).
+            model.ToGlTF(ConstructGlbPath(name), merge: (e) => e.Openings != null && e.Openings.Count > 0);
+        }
+
         [Theory(Skip = "IFC2X3")]
         [InlineData("example_1", "../../../models/IFC2X3/example_1.ifc")]
         // TODO: Reenable when IfcCompositeCurve is supported.
@@ -89,7 +109,7 @@ namespace Elements.IFC.Tests
             var planShape = Polygon.L(2, 4, 1.5);
             var floor = new Floor(planShape, 0.1);
             var floor1 = new Floor(planShape, 0.1, new Transform(0, 0, 2));
-            var o = new Opening(Polygon.Rectangle(0.5, 0.5), transform: new Transform(0.5, 0.5, 0));
+            var o = new Opening(Polygon.Rectangle(0.5, 0.5), Vector3.ZAxis, transform: new Transform(0.5, 0.5, 0));
             floor.Openings.Add(o);
 
             var model = new Model();

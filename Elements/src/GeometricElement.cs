@@ -1,12 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Elements.Geometry;
-using Elements.Interfaces;
 
 namespace Elements
 {
     public partial class GeometricElement
     {
+        /// <summary>
+        /// A collection of openings.
+        /// </summary>
+        public List<Opening> Openings { get; } = new List<Opening>();
+
         /// <summary>
         /// This method provides an opportunity for geometric elements
         /// to adjust their solid operations before tesselation. As an example,
@@ -84,13 +89,13 @@ namespace Elements
                                                       .Select(op => TransformedSolidOperation(op))
                                                       .ToArray();
 
-            if (this is IHasOpenings)
+            if (this.Openings != null && this.Openings.Count > 0)
             {
-                var openingContainer = (IHasOpenings)this;
-                voids = voids.Concat(openingContainer.Openings.SelectMany(o => o.Representation.SolidOperations
+                voids = voids.Concat(this.Openings.SelectMany(o => o.Representation.SolidOperations
                                                       .Where(op => op.IsVoid == true)
                                                       .Select(op => op._csg.Transform(o.Transform.ToMatrix4x4())))).ToArray();
             }
+
             // Don't try CSG booleans if we only have one one solid.
             if (solids.Count() == 1)
             {

@@ -15,9 +15,210 @@ namespace Elements.Serialization.IFC
     public static class IFCModelExtensions
     {
         /// <summary>
+        /// Construct a model from an IFC.
+        /// </summary>
+        /// <param name="path">The path to an IFC Express file.</param>
+        /// <param name="constructionErrors">Error messages which ocurred during model construction.</param>
+        public static Model FromIFC2(string path, out List<string> constructionErrors)
+        {
+            List<STEPError> errors;
+            var ifcModel = new Document(path, out errors);
+            foreach (var error in errors)
+            {
+                Console.WriteLine("***IFC ERROR***" + error.Message);
+            }
+
+            var buildingElements = ifcModel.AllInstancesDerivedFromType<IfcBuildingElement>();
+
+            var relVoids = ifcModel.AllInstancesOfType<IfcRelVoidsElement>();
+
+            var model = new Model();
+
+            constructionErrors = new List<string>();
+
+            Dictionary<Guid, GeometricElement> elementDefinitions = new Dictionary<Guid, GeometricElement>();
+
+            // var types = ifcModel.AllInstancesDerivedFromType<IfcBuildingElementType>();
+            // var relTypes = ifcModel.AllInstancesOfType<IfcRelDefinesByType>();
+
+            var materials = new Dictionary<string, Material>();
+            var repMaterialMap = new Dictionary<Guid, Material>();
+
+            // Get a unique set of materials that are used for all 
+            // styled items. While we're doing that we also build
+            // a map of the items that are being styled and their materials.
+
+            // TODO: Some of our test models use IfcMaterialList, which is 
+            // deprecated in IFC4. In the AC-Smiley model, for example, the
+            // windows use a representation with a material list that has glass
+            // for the window and wood for the frame. I think styled items is 
+            // the modern way to do this, so we shouldn't support material lists.
+
+            var styledItems = ifcModel.AllInstancesOfType<IfcStyledItem>();
+            foreach (var styledItem in styledItems)
+            {
+                var item = styledItem.Item; // The representation item that is styled.
+                if (item == null)
+                {
+                    continue;
+                }
+                foreach (var style in styledItem.Styles)
+                {
+                    if (style.Choice is IfcPresentationStyleAssignment)
+                    {
+                        var styleAssign = (IfcPresentationStyleAssignment)style.Choice;
+                        foreach (var presentationStyle in styleAssign.Styles)
+                        {
+                            if (presentationStyle.Choice is IfcSurfaceStyle)
+                            {
+                                var surfaceStyle = (IfcSurfaceStyle)presentationStyle.Choice;
+                                foreach (var styleElement in surfaceStyle.Styles)
+                                {
+                                    if (styleElement.Choice is IfcSurfaceStyleRendering)
+                                    {
+                                        var rendering = (IfcSurfaceStyleRendering)styleElement.Choice;
+                                        var transparency = (IfcRatioMeasure)rendering.Transparency;
+                                        var color = rendering.SurfaceColour.ToColor(1.0 - transparency);
+                                        var name = surfaceStyle.Name;
+                                        Material material = null;
+                                        if (!materials.ContainsKey(name))
+                                        {
+                                            material = new Material(color,
+                                                                    0.4,
+                                                                    0.4,
+                                                                    false,
+                                                                    null,
+                                                                    false,
+                                                                    true,
+                                                                    null,
+                                                                    true,
+                                                                    surfaceStyle.Id,
+                                                                    surfaceStyle.Name);
+                                            materials.Add(material.Name, material);
+                                        }
+                                        else
+                                        {
+                                            material = materials[name];
+                                        }
+                                        repMaterialMap.Add(item.Id, material);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            var sites = ifcModel.AllInstancesOfType<IfcSite>();
+            foreach (var site in sites)
+            {
+                var transform = site.ObjectPlacement.ToTransform();
+                var rep = site.GetRepresentationFromProduct(model,
+                                                            constructionErrors,
+                                                            repMaterialMap,
+                                                            out Transform mapTransform,
+                                                            out Guid mapId,
+                                                            out Material materialHint);
+                if (rep == null)
+                {
+                    continue;
+                }
+                var geom = new GeometricElement(transform,
+                                                        materialHint ?? BuiltInMaterials.Default,
+                                                        rep,
+                                                        false,
+                                                        IfcGuid.FromIfcGUID(site.GlobalId),
+                                                        site.Name);
+                model.AddElement(geom);
+            }
+
+            foreach (var buildingElement in buildingElements)
+            {
+                try
+                {
+                    var transform = new Transform();
+                    transform.Concatenate(buildingElement.ObjectPlacement.ToTransform());
+
+                    // Check if the building element is contained in a building storey
+                    foreach (var cis in buildingElement.ContainedInStructure)
+                    {
+                        transform.Concatenate(cis.RelatingStructure.ObjectPlacement.ToTransform());
+                    }
+
+                    var rep = buildingElement.GetRepresentationFromProduct(model,
+                                                                           constructionErrors,
+                                                                           repMaterialMap,
+                                                                           out Transform mapTransform,
+                                                                           out Guid mapId,
+                                                                           out Material materialHint);
+
+                    if (mapTransform != null)
+                    {
+                        GeometricElement definition = null;
+                        if (elementDefinitions.ContainsKey(mapId))
+                        {
+                            definition = elementDefinitions[mapId];
+                        }
+                        else
+                        {
+                            definition = new GeometricElement(transform,
+                                                        materialHint ?? BuiltInMaterials.Default,
+                                                        rep,
+                                                        true,
+                                                        IfcGuid.FromIfcGUID(buildingElement.GlobalId),
+                                                        buildingElement.Name);
+                            elementDefinitions.Add(mapId, definition);
+                        }
+
+                        // The cartesian transform needs to be applied 
+                        // before the element transformation because it
+                        // may contain scale and rotation.
+                        var instanceTransform = new Transform(mapTransform);
+                        instanceTransform.Concatenate(transform);
+                        var instance = definition.CreateInstance(instanceTransform, "test");
+
+                        model.AddElement(instance);
+                    }
+                    else
+                    {
+                        if (rep.SolidOperations.Count == 0)
+                        {
+                            constructionErrors.Add($"{buildingElement.GetType().Name} did not have any solid operations in its representation.");
+                            continue;
+                        }
+
+                        // TODO: Handle IfcMappedItem
+                        // - Idea: Make Representations an Element, so that they can be shared.
+                        // - Idea: Make PropertySet an Element. PropertySets can store type properties.
+                        var geom = new GeometricElement(transform,
+                                                        materialHint ?? BuiltInMaterials.Default,
+                                                        rep,
+                                                        false,
+                                                        IfcGuid.FromIfcGUID(buildingElement.GlobalId),
+                                                        buildingElement.Name);
+
+                        var voids = relVoids.Where(v => v.RelatingBuildingElement == buildingElement).Select(v => v.RelatedOpeningElement).Cast<IfcOpeningElement>();
+                        foreach (var v in voids)
+                        {
+                            var opening = v.ToOpening();
+                            geom.Openings.Add(opening);
+                        }
+
+                        model.AddElement(geom);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    constructionErrors.Add(ex.Message);
+                }
+            }
+            return model;
+        }
+
+        /// <summary>
         /// Load a model from IFC.
         /// </summary>
-        /// <param name="path">The path to an IFC STEP file.</param>
+        /// <param name="path">The path to an IFC Express file.</param>
         /// <param name="idsToConvert">An array of element ids to convert.</param>
         /// <param name="constructionErrors">Error messages which ocurred during model construction.</param>
         /// <returns>A model.</returns>

@@ -16,6 +16,10 @@
 - `Vector3.>=`
 - `Vector3.<=`
 - `Plane.Intersects(Plane a, Plane b)`
+- `GeometricElement.Openings`
+
+### Removed
+- `IHasOpenings`
 - A handful of convenience operators and conversions:
   - implicit `(double X, double Y, double Z)` => `Vector3`
   - implicit `(double X, double Y)` => `Vector3`

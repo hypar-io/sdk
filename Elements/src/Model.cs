@@ -191,7 +191,7 @@ namespace Elements
         /// </summary>
         /// <param name="json">The JSON representing the model.</param>
         /// <param name="errors">A collection of deserialization errors.</param>
-        /// <param name="forceTypeReload">Option to force reloading the inernal type cache. Use if you add types dynamically in your code.</param>
+        /// <param name="forceTypeReload">Option to force reloading the internal type cache. Use if you add types dynamically in your code.</param>
         public static Model FromJson(string json, out List<string> errors, bool forceTypeReload = false)
         {
             // When user elements have been loaded into the app domain, they haven't always been
@@ -245,6 +245,7 @@ namespace Elements
             // Ignore value types and strings
             // as they won't have properties that
             // could be elements.
+            // if (!t.IsClass || t == typeof(string) || t == typeof(Newtonsoft.Json.Linq.JObject))
             if (!t.IsClass || t == typeof(string))
             {
                 return elements;

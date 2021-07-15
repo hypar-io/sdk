@@ -229,6 +229,25 @@ namespace Elements.Tests
         }
 
         [Fact]
+        public void DeserializeModelWithOverrides()
+        {
+            var column = new Column(new Vector3(5, 0), 5, new Profile(Polygon.Rectangle(1, 1)));
+            Identity.AddOverrideIdentity(column, "test", "id", new Dictionary<string, object> { { "key1", 23 } });
+            var model = new Model();
+            model.AddElement(column);
+
+            File.WriteAllText("../../../del.json", model.ToJson());
+            var newModel = Model.FromJson(model.ToJson());
+            var newColumn = newModel.AllElementsOfType<Column>().First();
+            Assert.Equal(newColumn.AdditionalProperties, column.AdditionalProperties);
+
+            // these lines will fail with a stack overflow issue if we don't assert the dictionary issue above and we don't have either of hte fixes.
+            // var finalModel = new Model();
+            // finalModel.AddElements(newModel.Elements.Values);
+        }
+
+
+        [Fact]
         public void DeserializationSkipsNullProperties()
         {
             var column = new Column(new Vector3(5, 0), 5, new Profile(Polygon.Rectangle(1, 1)));

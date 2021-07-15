@@ -2,6 +2,10 @@
 
 ## 0.9.3
 
+### Added
+
+- Support for DXF from many basic elements.
+
 ### Changed
 
 - Added `Symbols` property to `ContentElement`.

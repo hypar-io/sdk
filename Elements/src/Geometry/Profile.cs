@@ -75,6 +75,15 @@ namespace Elements.Geometry
         }
 
         /// <summary>
+        /// A transformed copy of this profile.
+        /// </summary>
+        /// <param name="transform">The transform.</param>
+        public Profile Transformed(Transform transform)
+        {
+            return new Profile(this.Perimeter.TransformedPolygon(transform), this.Voids?.Select(v => v.TransformedPolygon(transform)).ToList() ?? new List<Polygon>());
+        }
+
+        /// <summary>
         /// Construct a profile.
         /// </summary>
         /// <param name="perimeter">The perimeter of the profile.</param>

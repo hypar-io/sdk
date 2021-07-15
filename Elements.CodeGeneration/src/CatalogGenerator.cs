@@ -123,6 +123,9 @@ namespace Elements.Generate
                         case Vector3 v:
                             codeToAdd = $"new Vector3({v.X},{v.Y},{v.Z})";
                             break;
+                        case IList<Symbol> symbols:
+                            codeToAdd = $"JsonConvert.DeserializeObject<List<Symbol>>(\"{System.Web.HttpUtility.JavaScriptStringEncode(Newtonsoft.Json.JsonConvert.SerializeObject(symbols))}\")";
+                            break;
                         case Dictionary<string, object> dict:
                             codeToAdd = "@\"" + Newtonsoft.Json.JsonConvert.SerializeObject(dict).Replace("\"", "\"\"") + "\"";
                             break;

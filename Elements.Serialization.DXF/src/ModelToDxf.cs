@@ -11,15 +11,11 @@ namespace Elements.Serialization.DXF
     /// </summary>
     public class ModelToDxf
     {
-        private Dictionary<Type, IRenderDxf> _dxfCreators = new Dictionary<Type, IRenderDxf>();
-
-        /// <summary>
-        /// Construct a ModelToDxf instance with all of the built in DXFCreators.
-        /// </summary>
-        public ModelToDxf()
+        private Dictionary<Type, IRenderDxf> _dxfCreators = new Dictionary<Type, IRenderDxf>
         {
-            _dxfCreators.Add(typeof(Floor), new FloorToDXF());
-        }
+            {typeof(ContentElement), new ContentElementToDXF()},
+            {typeof(ElementInstance), new ElementInstanceToDXF()}
+        };
 
         /// <summary>
         /// Renders the model in dxf to the returned stream.
@@ -33,13 +29,14 @@ namespace Elements.Serialization.DXF
 
             foreach (var element in model.Elements.Values)
             {
-                if (!_dxfCreators.TryGetValue(element.GetType(), out var converter))
+                if (_dxfCreators.TryGetValue(element.GetType(), out var converter))
                 {
-                    continue;
+                    converter.TryAddDxfEntity(doc, element, context);
                 }
-                if (converter.TryToCreateDxfEntity(element, context, out var entity))
+                else if (element is GeometricElement geomElement)
                 {
-                    doc.Entities.Add(entity);
+                    // fall back to geometric converter
+                    new GeometricElementToDxf().TryAddDxfEntity(doc, geomElement, context);
                 }
             }
 

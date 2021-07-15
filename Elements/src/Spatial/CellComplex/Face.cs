@@ -7,7 +7,7 @@ using Elements.Geometry;
 namespace Elements.Spatial.CellComplex
 {
     /// <summary>
-    /// A Face within a cell. Multiple cells can share the same Face.
+    /// A Face within a face complex or cell. Multiple cells can share the same Face.
     /// </summary>
     public class Face : ChildBase<Face, Polygon>, Interfaces.IHasNeighbors<Face, Polygon>
     {
@@ -35,15 +35,15 @@ namespace Elements.Spatial.CellComplex
         internal HashSet<Cell> Cells = new HashSet<Cell>();
 
         /// <summary>
-        /// Represents a unique Face within a CellComplex.
-        /// Is not intended to be created or modified outside of the CellComplex class code.
+        /// Represents a unique Face within a FaceComplex.
+        /// Is not intended to be created or modified outside of the FaceComplex class code.
         /// </summary>
-        /// <param name="cellComplex">CellComplex that this Face belongs to.</param>
+        /// <param name="faceComplex">FaceComplex that this Face belongs to.</param>
         /// <param name="id">ID of this Face.</param>
         /// <param name="directedEdges">List of the DirectedEdges that make up this Face.</param>
         /// <param name="u">Optional but highly recommended intended U direction for the Face.</param>
         /// <param name="v">Optional but highly recommended intended V direction for the Face.</param>
-        internal Face(CellComplex cellComplex, ulong id, List<DirectedEdge> directedEdges, Orientation u = null, Orientation v = null) : base(id, cellComplex)
+        internal Face(FaceComplex faceComplex, ulong id, List<DirectedEdge> directedEdges, Orientation u = null, Orientation v = null) : base(id, faceComplex)
         {
             this.DirectedEdgeIds = directedEdges.Select(ds => ds.Id).ToList();
             if (u != null)
@@ -105,9 +105,9 @@ namespace Elements.Spatial.CellComplex
         /// Get associated DirectedEdges.
         /// </summary>
         /// <returns></returns>
-        private List<DirectedEdge> GetDirectedEdges()
+        internal List<DirectedEdge> GetDirectedEdges()
         {
-            return this.DirectedEdgeIds.Select(dsId => CellComplex.GetDirectedEdge(dsId)).ToList();
+            return this.DirectedEdgeIds.Select(dsId => FaceComplex.GetDirectedEdge(dsId)).ToList();
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns></returns>
         public List<Vertex> GetVertices()
         {
-            return this.GetDirectedEdges().Select(ds => this.CellComplex.GetVertex(ds.StartVertexId)).ToList();
+            return this.GetDirectedEdges().Select(ds => this.FaceComplex.GetVertex(ds.StartVertexId)).ToList();
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns></returns>
         public (Orientation U, Orientation V) GetOrientation()
         {
-            return (U: this.CellComplex.GetOrientation(this._orientationUId), V: this.CellComplex.GetOrientation(this._orientationVId));
+            return (U: this.FaceComplex.GetOrientation(this._orientationUId), V: this.FaceComplex.GetOrientation(this._orientationVId));
         }
 
         /// <summary>
@@ -293,7 +293,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns>A collection of traversed Faces, including the starting Face.</returns>
         public List<Face> TraverseNeighbors(Vector3 target, bool parallel = false, bool includeSharedVertices = false, double completedRadius = 0)
         {
-            var maxCount = this.CellComplex.GetFaces().Count;
+            var maxCount = this.FaceComplex.GetFaces().Count;
             Func<Face, Face> getNextNeighbor = (Face curNeighbor) => (curNeighbor.GetClosestNeighbor(target, parallel, includeSharedVertices));
             return Face.TraverseNeighbors(this, maxCount, target, completedRadius, getNextNeighbor);
         }

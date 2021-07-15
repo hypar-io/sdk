@@ -20,21 +20,21 @@ namespace Elements.Spatial.CellComplex
         internal HashSet<DirectedEdge> DirectedEdges = new HashSet<DirectedEdge>();
 
         /// <summary>
-        /// Represents a unique Edge within a CellComplex.
-        /// Is not intended to be created or modified outside of the CellComplex class code.
+        /// Represents a unique Edge within a FaceComplex.
+        /// Is not intended to be created or modified outside of the FaceComplex class code.
         /// </summary>
-        /// <param name="cellComplex">CellComplex that this belongs to.</param>
+        /// <param name="faceComplex">FaceComplex that this belongs to.</param>
         /// <param name="id">Edge ID.</param>
         /// <param name="vertexId1">One of the vertex IDs for this edge.</param>
         /// <param name="vertexId2">The other vertex ID for this edge.</param>
-        internal Edge(CellComplex cellComplex, ulong id, ulong vertexId1, ulong vertexId2) : base(id, cellComplex)
+        internal Edge(FaceComplex faceComplex, ulong id, ulong vertexId1, ulong vertexId2) : base(id, faceComplex)
         {
             this.SetVerticesFromIds(vertexId1, vertexId2);
         }
 
         /// <summary>
         /// Used for deserialization only!
-        /// Simply omits the associated CellComplex, which we manually add in the CellComplex deserializer.
+        /// Simply omits the associated FaceComplex, which we manually add in the FaceComplex deserializer.
         /// </summary>
         /// <param name="id"></param>
         /// <param name="startVertexId"></param>
@@ -84,7 +84,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns></returns>
         public List<Vertex> GetVertices()
         {
-            return new List<Vertex>() { this.CellComplex.GetVertex(this.StartVertexId), this.CellComplex.GetVertex(this.EndVertexId) };
+            return new List<Vertex>() { this.FaceComplex.GetVertex(this.StartVertexId), this.FaceComplex.GetVertex(this.EndVertexId) };
         }
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns>A collection of traversed Edges, including the starting Edge.</returns>
         public List<Edge> TraverseNeighbors(Vector3 target, double completedRadius = 0)
         {
-            var maxCount = this.CellComplex.GetEdges().Count;
+            var maxCount = this.FaceComplex.GetEdges().Count;
             Func<Edge, Edge> getNextNeighbor = (Edge curNeighbor) => (curNeighbor.GetClosestNeighbor(target));
             return Edge.TraverseNeighbors(this, maxCount, target, completedRadius, getNextNeighbor);
         }

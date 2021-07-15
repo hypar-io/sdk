@@ -6,7 +6,7 @@ using System.Linq;
 namespace Elements.Spatial.CellComplex
 {
     /// <summary>
-    /// A unique Vertex in a CellComplex.
+    /// A unique Vertex in a FaceComplex.
     /// </summary>
     public class Vertex : VertexBase<Vertex>
     {
@@ -17,14 +17,14 @@ namespace Elements.Spatial.CellComplex
         internal HashSet<Edge> Edges = new HashSet<Edge>();
 
         /// <summary>
-        /// Represents a unique Vertex within a CellComplex.
+        /// Represents a unique Vertex within a FaceComplex.
         /// Is not intended to be created or modified outside of the CellComplex class code.
         /// </summary>
-        /// <param name="cellComplex">CellComplex that this belongs to</param>
+        /// <param name="faceComplex">FaceComplex that this belongs to</param>
         /// <param name="id"></param>
         /// <param name="point">Location of the vertex</param>
         /// <param name="name">Optional name</param>
-        internal Vertex(CellComplex cellComplex, ulong id, Vector3 point, string name = null) : base(cellComplex, id, point, name) { }
+        internal Vertex(FaceComplex faceComplex, ulong id, Vector3 point, string name = null) : base(faceComplex, id, point, name) { }
 
         /// <summary>
         /// For deserialization only!

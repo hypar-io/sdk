@@ -8,7 +8,7 @@ namespace Elements.Spatial.CellComplex
     /// A directed edge: a representation of a edge that has direction to it so that it can be used to traverse faces.
     /// This is essentially equivalent to the concept of a half edge, except it can be related to more than just a single Face.
     /// There is a maximum of two DirectedEdges per Edge.
-    /// This class is completely internal and only used for utilities inside of CellComplex.
+    /// This class is completely internal and only used for utilities inside of FaceComplex.
     /// </summary>
     internal class DirectedEdge : EdgeBase<DirectedEdge>
     {
@@ -26,16 +26,16 @@ namespace Elements.Spatial.CellComplex
         internal HashSet<Face> Faces = new HashSet<Face>();
 
         /// <summary>
-        /// Represents a unique DirectedEdge within a CellComplex.
+        /// Represents a unique DirectedEdge within a FaceComplex.
         /// This is added in addition to Edge because the same line may be required to move in a different direction
         /// as we traverse the edges of a face in their correctly-wound order.
-        /// Is not intended to be created or modified outside of the CellComplex class code.
+        /// Is not intended to be created or modified outside of the FaceComplex class code.
         /// </summary>
-        /// <param name="cellComplex">CellComplex that this DirectedEdge belongs to.</param>
+        /// <param name="faceComplex">FaceComplex that this DirectedEdge belongs to.</param>
         /// <param name="id">ID of this DirectedEdge.</param>
         /// <param name="edge">The undirected Edge that matches this DirectedEdge</param>
         /// <param name="edgeOrderMatchesDirection">If true, start point is same as edge.StartVertexId. Otherwise, is flipped.</param>
-        internal DirectedEdge(CellComplex cellComplex, ulong id, Edge edge, bool edgeOrderMatchesDirection) : base(id, cellComplex)
+        internal DirectedEdge(FaceComplex faceComplex, ulong id, Edge edge, bool edgeOrderMatchesDirection) : base(id, faceComplex)
         {
             this.EdgeId = edge.Id;
 
@@ -68,7 +68,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns></returns>
         internal Edge GetEdge()
         {
-            return this.CellComplex.GetEdge(this.EdgeId);
+            return this.FaceComplex.GetEdge(this.EdgeId);
         }
 
         /// <summary>

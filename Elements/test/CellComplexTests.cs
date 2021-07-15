@@ -291,5 +291,47 @@ namespace Elements.Tests
                 this.Model.AddElement(new ModelCurve(edge.GetGeometry(), LineMaterial));
             }
         }
+
+        [Fact]
+        public void FaceComplexExample()
+        {
+            this.Name = "Elements_Spatial_CellComplex_FaceComplex";
+
+            var complex = new FaceComplex(new BBox3(new Vector3(0, 0, 5), new Vector3(10, 10, 19)), 2, 2, 3);
+            var pathMaterial = new Material("Path", new Color(1, 0, 0, 0.75));
+
+            complex.AddFaceComplex(new BBox3(new Vector3(6, 6, 5), new Vector3(15, 15, 19)), 5, 5, 5);
+            // Draw base CellComplex
+            foreach (var face in complex.GetFaces())
+            {
+                this.Model.AddElement(new Panel(face.GetGeometry(), BuiltInMaterials.Mass));
+            }
+
+            // Traverse CellComplex
+            var start = new Vector3(15, 15, 20);
+            var end = new Vector3(-15, -15, -15);
+
+            // Draw lines from start and end to closest points, for reference
+            foreach (var pt in new List<Vector3>() { start, end })
+            {
+                var closest = complex.GetClosestVertex(pt).GetGeometry();
+                this.Model.AddElement(new ModelCurve(new Line(pt, closest), pathMaterial));
+            }
+
+            var curCell = complex.GetClosestFace(start);
+            var traversedCells = curCell.TraverseNeighbors(end, false, true, 0);
+            foreach (var cell in traversedCells)
+            {
+                var rep = new Representation(new[] { new Geometry.Solids.Lamina(cell.GetGeometry()) });
+                this.Model.AddElement(new GeometricElement(new Transform(), pathMaterial, rep, false, Guid.NewGuid(), "Path"));
+            }
+
+            var curEdge = complex.GetClosestEdge(start);
+            var traversedEdges = curEdge.TraverseNeighbors(end);
+            foreach (var edge in traversedEdges)
+            {
+                this.Model.AddElement(new ModelCurve(edge.GetGeometry(), LineMaterial));
+            }
+        }
     }
 }

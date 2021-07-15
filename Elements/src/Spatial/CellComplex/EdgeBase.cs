@@ -3,7 +3,7 @@ using Elements.Geometry;
 namespace Elements.Spatial.CellComplex
 {
     /// <summary>
-    /// A unique edge or directed edge in a cell complex.
+    /// A unique edge or directed edge in a face complex.
     /// </summary>
     public abstract class EdgeBase<ChildClass> : ChildBase<ChildClass, Line> where ChildClass : ChildBase<ChildClass, Line>
     {
@@ -21,9 +21,9 @@ namespace Elements.Spatial.CellComplex
         /// Create an EdgeBase (just calls CellChild constructor).
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="cellComplex"></param>
+        /// <param name="faceComplex"></param>
         /// <returns></returns>
-        protected EdgeBase(ulong id, CellComplex cellComplex) : base(id, cellComplex) { }
+        protected EdgeBase(ulong id, FaceComplex faceComplex) : base(id, faceComplex) { }
 
         /// <summary>
         /// Get the geometry that represents this Edge or DirectedEdge.
@@ -32,8 +32,8 @@ namespace Elements.Spatial.CellComplex
         public override Line GetGeometry()
         {
             return new Line(
-                this.CellComplex.GetVertex(this.StartVertexId).Value,
-                this.CellComplex.GetVertex(this.EndVertexId).Value
+                this.FaceComplex.GetVertex(this.StartVertexId).Value,
+                this.FaceComplex.GetVertex(this.EndVertexId).Value
             );
         }
 

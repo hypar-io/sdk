@@ -7,7 +7,7 @@ using System;
 namespace Elements.Spatial.CellComplex
 {
     /// <summary>
-    /// An abstract base for the children of CellComplex.
+    /// An abstract base for the children of FaceComplex.
     /// </summary>
     public abstract class ChildBase<ChildClass, GeometryType> : Interfaces.IDistanceTo where ChildClass : ChildBase<ChildClass, GeometryType>
     {
@@ -17,10 +17,10 @@ namespace Elements.Spatial.CellComplex
         public ulong Id { get; internal set; }
 
         /// <summary>
-        /// The CellComplex that this child belongs to.
+        /// The FaceComplex that this child belongs to.
         /// </summary>
         [JsonIgnore]
-        public CellComplex CellComplex { get; internal set; }
+        public FaceComplex FaceComplex { get; internal set; }
 
         /// <summary>
         /// Used to return a unique identifier for when we make HashSets of children of this type.
@@ -31,14 +31,14 @@ namespace Elements.Spatial.CellComplex
         }
 
         /// <summary>
-        /// Base constructor for a CellComplex child.
+        /// Base constructor for a FaceComplex child.
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="cellComplex"></param>
-        internal ChildBase(ulong id, CellComplex cellComplex = null)
+        /// <param name="faceComplex"></param>
+        internal ChildBase(ulong id, FaceComplex faceComplex = null)
         {
             this.Id = id;
-            this.CellComplex = cellComplex;
+            this.FaceComplex = faceComplex;
         }
 
         /// <summary>

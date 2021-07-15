@@ -37,6 +37,12 @@ namespace Elements.Spatial.CellComplex
         private Extrude _geometry;
 
         /// <summary>
+        /// The CellComplex that this cell belongs to.
+        /// </summary>
+        [JsonIgnore]
+        public CellComplex CellComplex { get; internal set; }
+
+        /// <summary>
         /// Represents a unique Cell wtihin a CellComplex.
         /// Is not intended to be created or modified outside of the CellComplex class code.
         /// </summary>
@@ -47,6 +53,7 @@ namespace Elements.Spatial.CellComplex
         /// <param name="topFace">The top face for this cell. This should also be included in the list of all faces.</param>
         internal Cell(CellComplex cellComplex, ulong id, List<Face> faces, Face bottomFace, Face topFace) : base(id, cellComplex)
         {
+            this.CellComplex = cellComplex;
             if (bottomFace != null)
             {
                 this.BottomFaceId = bottomFace.Id;
@@ -114,7 +121,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns></returns>
         public Face GetTopFace()
         {
-            return this.TopFaceId == null ? null : this.CellComplex.GetFace(this.TopFaceId);
+            return this.TopFaceId == null ? null : this.FaceComplex.GetFace(this.TopFaceId);
         }
 
         /// <summary>
@@ -123,7 +130,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns></returns>
         public Face GetBottomFace()
         {
-            return this.BottomFaceId == null ? null : this.CellComplex.GetFace(this.BottomFaceId);
+            return this.BottomFaceId == null ? null : this.FaceComplex.GetFace(this.BottomFaceId);
         }
 
         /// <summary>
@@ -132,7 +139,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns></returns>
         public List<Face> GetFaces()
         {
-            return this.FaceIds.Select(fId => this.CellComplex.GetFace(fId)).ToList();
+            return this.FaceIds.Select(fId => this.FaceComplex.GetFace(fId)).ToList();
         }
 
         /// <summary>
@@ -237,7 +244,7 @@ namespace Elements.Spatial.CellComplex
         /// <returns>A collection of traversed Cells, including the starting Cell.</returns>
         public List<Cell> TraverseNeighbors(Vector3 target, double completedRadius = 0)
         {
-            var maxCount = this.CellComplex.GetCells().Count;
+            var maxCount = CellComplex.GetCells().Count;
             Func<Cell, Cell> getNextNeighbor = (Cell curNeighbor) => (curNeighbor.GetClosestNeighbor(target));
             return Cell.TraverseNeighbors(this, maxCount, target, completedRadius, getNextNeighbor);
         }

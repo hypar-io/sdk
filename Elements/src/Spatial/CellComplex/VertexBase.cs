@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace Elements.Spatial.CellComplex
 {
     /// <summary>
-    /// A unique Vertex or Orientation in a cell complex.
+    /// A unique Vertex or Orientation in a face complex.
     /// </summary>
     public abstract class VertexBase<ChildClass> : ChildBase<ChildClass, Vector3> where ChildClass : ChildBase<ChildClass, Vector3>
     {
@@ -19,14 +19,14 @@ namespace Elements.Spatial.CellComplex
         public string Name { get; set; }
 
         /// <summary>
-        /// Represents one Vertex or Orientation in a CellComplex.
-        /// Is not intended to be created or modified outside of the CellComplex class code.
+        /// Represents one Vertex or Orientation in a FaceComplex.
+        /// Is not intended to be created or modified outside of the FaceComplex class code.
         /// </summary>
-        /// <param name="cellComplex">CellComplex that this belongs to</param>
+        /// <param name="faceComplex">FaceComplex that this belongs to</param>
         /// <param name="id"></param>
         /// <param name="point">Location of the vertex</param>
         /// <param name="name">Optional name</param>
-        internal VertexBase(CellComplex cellComplex, ulong id, Vector3 point, string name = null) : base(id, cellComplex)
+        internal VertexBase(FaceComplex faceComplex, ulong id, Vector3 point, string name = null) : base(id, faceComplex)
         {
             this.Value = point;
             this.Name = name;
